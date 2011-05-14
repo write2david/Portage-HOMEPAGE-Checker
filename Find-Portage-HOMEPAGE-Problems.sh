@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# # https://github.com/write2david/Portage-HOMEPAGE-Checker/
+# https://github.com/write2david/Portage-HOMEPAGE-Checker/
 
 # Current version of this script is available here:
 # https://github.com/write2david/Portage-HOMEPAGE-Checker/raw/master/Find-Portage-HOMEPAGE-Problems.sh 
@@ -19,7 +19,7 @@
 # Remove "HOMEPAGE="
 # Remove all double-quotes
 # Sometimes more than one URL is listed on the same HOMEPAGE line, so convert spaces to new lines
-# Sometimes people add stuff to HOMEPAGE besides the URL, like comments or the string "${HOMEPAGE}"  -- so get rid of all entries that don't include "http"]
+# Sometimes people add stuff to HOMEPAGE besides the URL, like comments -- so get rid of all entries that don't include "http://"]
 
 
 find /usr/portage/ -name '*.ebuild' -type f -exec grep HOMEPAGE '{}' \; | sed 's/HOMEPAGE=//' | sed 's/"//g' | sed 's/\ /\n/g' | grep http:// > /tmp/PortageHomepages-Unsorted.txt
@@ -76,11 +76,12 @@ rm /tmp/PortageHome*
 
 # STEP 7
 
+# Display the useful information.
+
 echo ""
 echo "There are `wc -l /tmp/RealPortageHomepageIssues.txt | awk '{print $1}'` HOMEPAGES that have issues."
 echo ""
 echo ""
-
 
 
 for i in $(cat /tmp/RealPortageHomepageIssues.txt) ; do
