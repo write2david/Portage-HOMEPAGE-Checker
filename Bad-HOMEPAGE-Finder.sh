@@ -1,14 +1,14 @@
 #!/bin/bash
 
+# You may want to run it like this: time ./Bad-HOMEPAGE-Finder.sh > ~/Bad-HOMEPAGEs-on-`date +%m-%d-%y`.txt
+
+# Then you can, in another terminal, watch the output:  tail -f ~/Bad-HOMEPAGEs-on-`date +%m-%d-%y`.txt
+
 # https://github.com/write2david/Portage-HOMEPAGE-Checker/
 
 # Current version of this script is available here:
 # https://github.com/write2david/Portage-HOMEPAGE-Checker/raw/master/Find-Portage-HOMEPAGE-Problems.sh 
 
-
-# It may be interesting to you to prefix this script with "time"
-
-# This script is for checking whether the HOMEPAGE variable in ebuilds are valid.
 
 # This script tests all the HOMEPAGE variables in all the ebuilds in the Portage tree.  For that HOMEPAGE URL's that done have a 200 (OK) or 302 (redirect) HTTP status code, this script displays that URL, what the status code is, and which ebuilds use it.  Then bugs can be filed on bugs.gentoo.org so that the HOMEPAGE can be updated.
 
@@ -22,17 +22,28 @@
 # Sometimes people add stuff to HOMEPAGE besides the URL, like comments -- so get rid of all entries that don't include "http://"]
 
 
-find /usr/portage/ -name '*.ebuild' -type f -exec grep HOMEPAGE '{}' \; | sed 's/HOMEPAGE=//' | sed 's/"//g' | sed 's/\ /\n/g' | grep http:// > /tmp/PortageHomepages-Unsorted.txt
+echo
+echo
+echo
+echo "Getting list of all HOMEPAGE's in the Portage Tree..."
+echo
+
+# Homepages may be commented out, so in the following line, we grep for HOMEPAGE only if it is at the beginning of the line.  See http://bugs.gentoo.org/show_bug.cgi?id=366957
+
+find /usr/portage/ -name '*.ebuild' -type f -exec grep '^HOMEPAGE' '{}' \; | sed 's/HOMEPAGE=//' | sed 's/"//g' | sed 's/\ /\n/g' | grep http:// > /tmp/PortageHomepages-Unsorted.txt
 
 sort /tmp/PortageHomepages-Unsorted.txt | uniq > /tmp/PortageHomepages.txt
 
 echo "Number of unique HOMEPAGE URL's:" && wc -l /tmp/PortageHomepages.txt | awk '{ print $1}'
 
 
+echo
 
 # STEP 2
 
 # check all the sites (with "wget --spider") to see if the URL's are good or broken
+
+echo "Checking each homepage to see if it is accessible..."
 
 wget --spider -nv -i /tmp/PortageHomepages.txt -o /tmp/PortageHomepagesTested.txt --timeout=10 --tries=3 --waitretry=10 --no-check-certificate --no-cookies
 
@@ -42,6 +53,7 @@ wget --spider -nv -i /tmp/PortageHomepages.txt -o /tmp/PortageHomepagesTested.tx
 
 # Go through the results of the previous command and remove all the "200" lines ("OK"), so that we are left with only the problem sites. Keep only the "http" lines, and remove the ":" that wget puts in at the end of the lines. Sometimes the following command will list sites that wget identified as a "broken link" because it was a redirect (302).  These are false-positives and we'll deal with them in a bit.
 
+
 grep -v '200 OK' /tmp/PortageHomepagesTested.txt | grep -v '200 Ok' | grep http | sed 's/:$//g' > /tmp/PortageHomepagesWithIssues.txt
 
 
@@ -49,6 +61,8 @@ grep -v '200 OK' /tmp/PortageHomepagesTested.txt | grep -v '200 Ok' | grep http 
 # STEP 4
 
 # Get the HTTP codes all the HOMEPAGES that have issues
+
+echo "Removing redirects (302) from the list..."
 
 wget -i /tmp/PortageHomepagesWithIssues.txt -o /tmp/PortageHomepagesLogs.txt -O /tmp/PortageHomepageDump
 
@@ -82,6 +96,10 @@ echo ""
 echo "There are `wc -l /tmp/RealPortageHomepageIssues.txt | awk '{print $1}'` HOMEPAGES that have issues."
 echo ""
 echo ""
+
+echo "Here they are..."
+
+echo 
 
 
 for i in $(cat /tmp/RealPortageHomepageIssues.txt) ; do
