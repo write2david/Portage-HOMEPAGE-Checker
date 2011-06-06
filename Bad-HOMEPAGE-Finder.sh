@@ -38,7 +38,7 @@ echo
 echo
 echo
 echo
-echo "Getting list of all HOMEPAGE's in the Portage Tree..."
+echo "Getting list of all HOMEPAGE's in the Portage Tree (this will take a few moments)..."
 echo
 
 # Homepages may be commented out, so in the following line, we grep for HOMEPAGE only if it is at the beginning of the line.  See http://bugs.gentoo.org/show_bug.cgi?id=366957
@@ -58,6 +58,9 @@ echo
 # check all the sites (with "wget --spider") to see if the URL's are either good or broken
 
 echo "Checking each HOMEPAGE in the Portage tree to see if it is accessible..."
+echo
+echo "  This process will take a little while."
+echo "  You can monitor the progress by running this command in another terminal:  tail -f /tmp/PortageHomepagesTested.txt"
 
 wget --spider -nv -i /tmp/PortageHomepages.txt -o /tmp/PortageHomepagesTested.txt --timeout=10 --tries=3 --waitretry=10 --no-check-certificate --no-cookies
 
@@ -75,7 +78,7 @@ grep -v '200 OK' /tmp/PortageHomepagesTested.txt | grep -v '200 Ok' | grep http 
 
 # Get the HTTP codes all the HOMEPAGES that have issues
 
-echo "Removing redirects (302) from the list..."
+echo "Removing redirects (302) from the list of \"broken\" HOMEPAGE's..."
 
 wget -i /tmp/PortageHomepagesWithIssues.txt -o /tmp/PortageHomepagesLogs.txt -O /tmp/PortageHomepageDump
 
@@ -106,6 +109,7 @@ rm /tmp/PortageHome*
 # Display the useful information.
 
 echo ""
+echo
 echo "There are `wc -l /tmp/RealPortageHomepageIssues.txt | awk '{print $1}'` HOMEPAGES that have issues."
 echo ""
 echo ""
