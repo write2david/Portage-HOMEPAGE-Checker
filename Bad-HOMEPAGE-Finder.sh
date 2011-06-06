@@ -12,6 +12,8 @@
 echo
 echo 
 echo "Welcome to the Portage Tree Homepage Checker"
+echo 
+echo "   https://github.com/write2david/Portage-HOMEPAGE-Checker"
 echo
 echo
 echo "This script tests all the HOMEPAGE variables in all the ebuilds in the Portage tree."
@@ -55,7 +57,7 @@ echo
 
 # check all the sites (with "wget --spider") to see if the URL's are either good or broken
 
-echo "Checking each homepage to see if it is accessible..."
+echo "Checking each HOMEPAGE in the Portage tree to see if it is accessible..."
 
 wget --spider -nv -i /tmp/PortageHomepages.txt -o /tmp/PortageHomepagesTested.txt --timeout=10 --tries=3 --waitretry=10 --no-check-certificate --no-cookies
 
@@ -64,7 +66,6 @@ wget --spider -nv -i /tmp/PortageHomepages.txt -o /tmp/PortageHomepagesTested.tx
 # STEP 3
 
 # Go through the results of the previous command and remove all the "200" lines ("OK"), so that we are left with only the problem sites. Keep only the "http" lines, and remove the ":" that wget puts in at the end of the lines. Sometimes the following command will list sites that wget identified as a "broken link" because it was a redirect (302).  These are false-positives and we'll deal with them in a bit.
-
 
 grep -v '200 OK' /tmp/PortageHomepagesTested.txt | grep -v '200 Ok' | grep http | sed 's/:$//g' > /tmp/PortageHomepagesWithIssues.txt
 
@@ -82,7 +83,7 @@ wget -i /tmp/PortageHomepagesWithIssues.txt -o /tmp/PortageHomepagesLogs.txt -O 
 
 # STEP 5
 
-# Filter out the URL's that have 302 redirects, which are okay. The URL for the 302 redirets is 3 lines before the "302 redirect" message, and is the 3rd field in awk's estimation
+# Filter out the URL's that have 302 redirects, which are okay. The URL for the 302 redirects is 3 lines before the "302 redirect" message, and is the 3rd field in awk's estimation
 
 grep 302 /tmp/PortageHomepagesLogs.txt -B 3 | head -n1 | awk '{ print $3}' > /tmp/PortageHomepagesWith302.txt
 
@@ -136,17 +137,14 @@ rm /tmp/RealPortageHomepageIssues.txt
 
 
 
-#[file a bug]
-
-#http://bugs.gentoo.org/enter_bug.cgi?product=Gentoo%20Linux&format=guided
-
-#Select Applications, remove URL
-
-
-#Invalid HOMEPAGE for
-
-
-
-#The site will not load because 
-
-#[URL]
+echo
+echo
+echo 
+echo "Now you can file bug reports: http://bugs.gentoo.org/enter_bug.cgi?product=Gentoo%20Linux&format=guided"
+echo 
+echo
+echo "Select \"Applications\"  and enter \"Invalid HOMEPAGE for [package name]\"."
+echo
+echo "Mention something like: \"The HOMEPAGE will not load because [what type of error].  The HOMEPAGE is:  [URL].\"" 
+echo
+echo
