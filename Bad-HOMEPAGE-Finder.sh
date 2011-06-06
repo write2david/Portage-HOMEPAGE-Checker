@@ -9,13 +9,24 @@
 # Current version of this script is available here:
 # https://github.com/write2david/Portage-HOMEPAGE-Checker/raw/master/Find-Portage-HOMEPAGE-Problems.sh 
 
+echo
+echo 
+echo "Welcome to the Portage Tree Homepage Checker"
+echo
+echo
+echo "This script tests all the HOMEPAGE variables in all the ebuilds in the Portage tree."
+echo "For that HOMEPAGE URL\'s that *don\'t* have a \'200\' (OK) or \'302\' (redirect) HTTP status code,"
+echo  "     this script displays that URL, what the status code is, and which ebuilds use it."
+echo  "     Then bugs can be filed on bugs.gentoo.org so that the HOMEPAGE can be updated."
+echo
+echo
 
-# This script tests all the HOMEPAGE variables in all the ebuilds in the Portage tree.  For that HOMEPAGE URL's that done have a 200 (OK) or 302 (redirect) HTTP status code, this script displays that URL, what the status code is, and which ebuilds use it.  Then bugs can be filed on bugs.gentoo.org so that the HOMEPAGE can be updated.
+
 
 
 # STEP 1
 
-# [Find all ebuilds and grep their HOMEPAGE line
+# Find all ebuilds and grep their HOMEPAGE line
 # Remove "HOMEPAGE="
 # Remove all double-quotes
 # Sometimes more than one URL is listed on the same HOMEPAGE line, so convert spaces to new lines
@@ -34,14 +45,15 @@ find /usr/portage/ -name '*.ebuild' -type f -exec grep '^HOMEPAGE' '{}' \; | sed
 
 sort /tmp/PortageHomepages-Unsorted.txt | uniq > /tmp/PortageHomepages.txt
 
-echo "Number of unique HOMEPAGE URL's:" && wc -l /tmp/PortageHomepages.txt | awk '{ print $1}'
-
-
+echo "     Number of unique HOMEPAGE URL's:"
+wc -l /tmp/PortageHomepages.txt | awk '{ print "     "$1}'
 echo
+echo
+
 
 # STEP 2
 
-# check all the sites (with "wget --spider") to see if the URL's are good or broken
+# check all the sites (with "wget --spider") to see if the URL's are either good or broken
 
 echo "Checking each homepage to see if it is accessible..."
 
