@@ -66,6 +66,18 @@ wget --spider -nv -i /tmp/PortageHomepages.txt -o /tmp/PortageHomepagesTested.tx
 
 
 
+# STEP 2.5
+
+# GO through the results of the previous command and get all the DNS resolution errors (which is something the next step doesn't catch)
+
+grep 'unable to resolve host address' /tmp/PortageHomepagesTested.txt > /tmp/RealPortageHomepageIssues-DNS-ISSUES.txt
+cat /tmp/PortageHomepageIssues-DNS-ISSUES.txt
+
+# pull only the URL (the 7th field), then get only the characters a-z, A-Z, 0-9, and period (that is, remove the quotes)
+cat /tmp/PortageHomepageIssues-DNS-ISSUES.txt | awk '{ print $7}' | sed s/[^a-zA-Z0-9.]//g > /tmp/RealPortageHomepageIssues-DNS-ISSUES.txt 
+
+
+
 # STEP 3
 
 # Go through the results of the previous command and remove all the "200" lines ("OK"), so that we are left with only the problem sites. Keep only the "http" lines, and remove the ":" that wget puts in at the end of the lines. Sometimes the following command will list sites that wget identified as a "broken link" because it was a redirect (302).  These are false-positives and we'll deal with them in a bit.
@@ -108,14 +120,34 @@ rm /tmp/PortageHome*
 
 # Display the useful information.
 
-echo ""
-echo
-echo "There are `wc -l /tmp/RealPortageHomepageIssues.txt | awk '{print $1}'` HOMEPAGES that have issues."
+echo "There are `wc -l /tmp/RealPortageHomepageIssues-DNS-ISSUES.txt | awk '{print $1}'` HOMEPAGES that have DNS issues."
 echo ""
 echo ""
-
 echo "Here they are..."
+echo 
 
+
+for i in $(cat /tmp/RealPortageHomepageIssues-DNS-ISSUES.txt) ; do
+echo ""
+echo "HOMEPAGE with a problem...    $i"
+echo "   ...Searching Portage tree for all ebuilds that use this HOMEPAGE."
+echo "   (need to fix: currently, all ebuilds that reference this URL will be included, whether or not it is the HOMEPAGE variable or the SRC_URI variable.)" 
+echo ""
+find /usr/portage/ -name '*.ebuild' -type f -print | xargs -i grep -l $i {}
+echo ""
+echo ""
+done
+
+
+
+
+echo
+echo
+echo
+echo "There are `wc -l /tmp/RealPortageHomepageIssues.txt | awk '{print $1}'` HOMEPAGES that have other issues."
+echo ""
+echo ""
+echo "Here they are..."
 echo 
 
 
@@ -126,6 +158,7 @@ wget $i -o /tmp/RealProblemLog.txt -O /tmp/RealProblemDump
 tail -n2 /tmp/RealProblemLog.txt | head -n1 | awk '{ print $4 " " $5 " "$6 " " $7 " " $8 " " $9}' > /tmp/RealProblemCode.txt
 echo "   ...Type of problem with this URL...   `cat /tmp/RealProblemCode.txt`"
 echo "   ...Searching Portage tree for all ebuilds that use this HOMEPAGE." 
+echo "   (need to fix: currently, all ebuilds that reference this URL will be included, whether or not it is the HOMEPAGE variable or the SRC_URI variable.)" 
 echo ""
 find /usr/portage/ -name '*.ebuild' -type f -print | xargs -i grep -l $i {}
 echo ""
@@ -137,7 +170,7 @@ done
 
 
 # Last step of cleanup
-rm /tmp/RealPortageHomepageIssues.txt
+rm /tmp/RealPortageHomepageIssues*
 
 
 
