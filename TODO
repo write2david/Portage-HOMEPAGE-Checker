@@ -1,7 +1,3 @@
 TODO
 
 Be able to differentiate the bad URL's: either HOMEPAGE or SRC_URI
-
-Add a timer to step 1 and step 2 on the HOMEPAGE checker
-
-Alphabetize and de-duplicate the list, before wget checks it the first time.
