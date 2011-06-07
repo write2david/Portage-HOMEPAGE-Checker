@@ -16,8 +16,9 @@ echo
 echo "   The current version is available at:"
 echo "   https://github.com/write2david/Portage-HOMEPAGE-Checker"
 echo
+echo "This script depends on the 'sys-process/time' package."
 echo
-echo "We will now test all HOMEPAGE variables in the Portage tree."
+echo "We will now test all HOMEPAGE variables in your Portage tree."
 echo "     We'll find those that have DNS issues.  We'll also find those"
 echo "     without a '200' (OK) or '302' (redirect) HTTP status code."
 echo
@@ -43,13 +44,13 @@ echo
 
 # Homepages may be commented out, so in the following line, we grep for HOMEPAGE only if it is at the beginning of the line.  See http://bugs.gentoo.org/show_bug.cgi?id=366957
 
-/usr/bin/time -p -o /tmp/PTHC-Find-Homepages.txt find /usr/portage/ -name '*.ebuild' -type f -exec grep '^HOMEPAGE' '{}' \; | sed 's/HOMEPAGE=//' | sed 's/"//g' | sed 's/\ /\n/g' | grep http:// > /tmp/PortageHomepages-Unsorted.txt
+/usr/bin/time -f %E -o /tmp/PTHC-Find-Homepages.txt find /usr/portage/ -name '*.ebuild' -type f -exec grep '^HOMEPAGE' '{}' \; | sed 's/HOMEPAGE=//' | sed 's/"//g' | sed 's/\ /\n/g' | grep http:// > /tmp/PortageHomepages-Unsorted.txt
 
 sort /tmp/PortageHomepages-Unsorted.txt | uniq > /tmp/PortageHomepages.txt
 
-echo "     Number of unique HOMEPAGE URL's: `wc -l /tmp/PortageHomepages.txt | awk '{ print "     "$1}'`"
+echo "     Number of unique HOMEPAGE URL's: `wc -l /tmp/PortageHomepages.txt | awk '{ print $1}'`"
 echo
-echo "     Amount of time this step took: `cat /tmp/PTHC-Find-Homepages.txt | head -n 1 | awk '{ print $2}'`"
+echo "     Amount of time this step took: `cat /tmp/PTHC-Find-Homepages.txt` seconds."
 echo
 echo
 echo
@@ -68,12 +69,17 @@ echo
 rm -f /tmp/PortageHomepagesTested.txt > /dev/null
 
 # /usr/bin/time -p -o /tmp/PTHC-Check-Each-Homepage.txt wget --spider -nv -i /tmp/PortageHomepages.txt -o /tmp/PortageHomepagesTested.txt --timeout=10 --tries=3 --waitretry=10 --no-check-certificate --no-cookies
-# The command above takes forever, run 7 instances of wget in parallel, idea taken from http://www.linuxjournal.com/content/downloading-entire-web-site-wget#comment-325493
+# The command above takes forever, run 3 instances of wget in parallel, idea taken from http://www.linuxjournal.com/content/downloading-entire-web-site-wget#comment-325493
 # here we also change wget command from -o to -a, so that each wget doesn't overwrite the file, but instead appends to it
-/usr/bin/time -p -o /tmp/PTHC-Check-Each-Homepage.txt cat /tmp/PortageHomepages.txt | xargs -n1 -P 7 -i wget --spider -nv -a /tmp/PortageHomepagesTested.txt --timeout=10 --tries=3 --waitretry=10 --no-check-certificate --no-cookies {}
+
+# NOTE:  you can increase speed by adding more instances of wget (change "-P 3" to something like "-P 15")
+#     but I don't think my DNS server likes that many lookups so quickly, after a while it stops resolving
+#     So, if you want to increase parallelization further, it might be best to run your own DNS server like unbound
+/usr/bin/time -f %E -o /tmp/PTHC-Check-Each-Homepage.txt cat /tmp/PortageHomepages.txt | xargs -n1 -P 3 -i wget --spider -nv -a /tmp/PortageHomepagesTested.txt --timeout=10 --tries=3 --waitretry=10 --no-check-certificate --no-cookies -O /dev/null{}
+
 
 echo
-echo "     Amount of time this step took: `cat /tmp/PTHC-Check-Each-Homepage.txt | head -n 1 | awk '{ print $2}'`"
+echo "     Amount of time this step took: `cat /tmp/PTHC-Check-Each-Homepage.txt`"
 
 
 echo
@@ -109,10 +115,14 @@ grep -v '200 OK' /tmp/PortageHomepagesTested.txt | grep -v '200 Ok' | grep http 
 # Removing redirects (302) from the list of "broken" HOMEPAGE's
 
 # wget -i /tmp/PortageHomepagesWithIssues.txt -o /tmp/PortageHomepagesLogs.txt -O /tmp/PortageHomepageDump
-# The command above takes forever, run 7 instances of wget in parallel, idea taken from http://www.linuxjournal.com/content/downloading-entire-web-site-wget#comment-325493
+# The command above takes forever, run 3 instances of wget in parallel, idea taken from http://www.linuxjournal.com/content/downloading-entire-web-site-wget#comment-325493
 # here we also change wget command from -o to -a, so that each wget doesn't overwrite the file, but instead appends to it
+
+# NOTE:  you can increase speed by adding more instances of wget (change "-P 3" to something like "-P 15")
+#     but I don't think my DNS server likes that many lookups so quickly, after a while it stops resolving
+#     So, if you want to increase parallelization further, it might be best to run your own DNS server like unbound
 rm -f /tmp/PortageHomepagesLogs.txt > /dev/null
-cat /tmp/PortageHomepagesWithIssues.txt | xargs -n1 -P 7 -i wget -a /tmp/PortageHomepagesLogs.txt -O /dev/null {}
+cat /tmp/PortageHomepagesWithIssues.txt | xargs -n1 -P 3 -i wget -a /tmp/PortageHomepagesLogs.txt -O /dev/null {}
 
 
 
