@@ -65,8 +65,13 @@ echo "     This process will take a while."
 echo "     You can monitor the progress by running this command in another terminal:"
 echo "        tail -f /tmp/PortageHomepagesTested.txt"
 echo
+rm -f /tmp/PortageHomepagesTested.txt > /dev/null
 
-/usr/bin/time -p -o /tmp/PTHC-Check-Each-Homepage.txt wget --spider -nv -i /tmp/PortageHomepages.txt -o /tmp/PortageHomepagesTested.txt --timeout=10 --tries=3 --waitretry=10 --no-check-certificate --no-cookies
+# /usr/bin/time -p -o /tmp/PTHC-Check-Each-Homepage.txt wget --spider -nv -i /tmp/PortageHomepages.txt -o /tmp/PortageHomepagesTested.txt --timeout=10 --tries=3 --waitretry=10 --no-check-certificate --no-cookies
+# The command above takes forever, run 7 instances of wget in parallel, idea taken from http://www.linuxjournal.com/content/downloading-entire-web-site-wget#comment-325493
+# here we also change wget command from -o to -a, so that each wget doesn't overwrite the file, but instead appends to it
+/usr/bin/time -p -o /tmp/PTHC-Check-Each-Homepage.txt cat /tmp/PortageHomepages.txt | xargs -n1 -P 7 -i wget --spider -nv -a /tmp/PortageHomepagesTested.txt --timeout=10 --tries=3 --waitretry=10 --no-check-certificate --no-cookies {}
+
 echo
 echo "     Amount of time this step took: `cat /tmp/PTHC-Check-Each-Homepage.txt | head -n 1 | awk '{ print $2}'`"
 
@@ -103,7 +108,11 @@ grep -v '200 OK' /tmp/PortageHomepagesTested.txt | grep -v '200 Ok' | grep http 
 
 # Removing redirects (302) from the list of "broken" HOMEPAGE's
 
-wget -i /tmp/PortageHomepagesWithIssues.txt -o /tmp/PortageHomepagesLogs.txt -O /tmp/PortageHomepageDump
+# wget -i /tmp/PortageHomepagesWithIssues.txt -o /tmp/PortageHomepagesLogs.txt -O /tmp/PortageHomepageDump
+# The command above takes forever, run 7 instances of wget in parallel, idea taken from http://www.linuxjournal.com/content/downloading-entire-web-site-wget#comment-325493
+# here we also change wget command from -o to -a, so that each wget doesn't overwrite the file, but instead appends to it
+rm -f /tmp/PortageHomepagesLogs.txt > /dev/null
+cat /tmp/PortageHomepagesWithIssues.txt | xargs -n1 -P 7 -i wget -a /tmp/PortageHomepagesLogs.txt -O /dev/null {}
 
 
 
