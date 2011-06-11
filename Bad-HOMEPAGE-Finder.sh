@@ -16,11 +16,11 @@ echo
 echo "   The current version is available at:"
 echo "   https://github.com/write2david/Portage-HOMEPAGE-Checker"
 echo
-echo "This script depends on the 'sys-process/time' package."
+echo "   This script depends on the 'sys-process/time' package."
 echo
-echo "We will now test all HOMEPAGE variables in your Portage tree."
-echo "     We'll find those that have DNS issues.  We'll also find those"
-echo "     without a '200' (OK) or '302' (redirect) HTTP status code."
+echo
+echo "We will test all HOMEPAGE variables in your Portage tree."
+echo "     We will find HOMEPAGES (and sometimes SRC_URI's) that don't load."
 echo
 echo
 
@@ -48,9 +48,9 @@ echo
 
 sort /tmp/PortageHomepages-Unsorted.txt | uniq > /tmp/PortageHomepages.txt
 
-echo "     Number of unique HOMEPAGE URL's: `wc -l /tmp/PortageHomepages.txt | awk '{ print $1}'`"
+echo "     Number of unique HOMEPAGE URL's in Portage tree: `wc -l /tmp/PortageHomepages.txt | awk '{ print $1}'`"
 echo
-echo "     Amount of time this step took: `cat /tmp/PTHC-Find-Homepages.txt` seconds."
+echo "     Amount of time it took to find them all: `cat /tmp/PTHC-Find-Homepages.txt`."
 echo
 echo
 echo
@@ -63,6 +63,7 @@ echo
 echo "2) Checking each HOMEPAGE in the Portage tree to see if it is accessible..."
 echo
 echo "     This process will take a while."
+echo
 echo "     You can monitor the progress by running this command in another terminal:"
 echo "        tail -f /tmp/PortageHomepagesTested.txt"
 echo
@@ -78,8 +79,8 @@ rm -f /tmp/PortageHomepagesTested.txt > /dev/null
 /usr/bin/time -f %E -o /tmp/PTHC-Check-Each-Homepage.txt cat /tmp/PortageHomepages.txt | xargs -n1 -P 3 -i wget --spider -nv -a /tmp/PortageHomepagesTested.txt --timeout=10 --tries=3 --waitretry=10 --no-check-certificate --no-cookies -O /dev/null {}
 
 
-echo
 echo "     Amount of time this step took: `cat /tmp/PTHC-Check-Each-Homepage.txt`"
+echo
 
 
 echo
@@ -119,7 +120,9 @@ rm -f /tmp/PortageHomepagesLogs.txt > /dev/null
 echo "     Amount of time *PART 1* of this step took: `cat /tmp/PTHC-Processing-Results-1.txt`"
 echo
 echo "     You can monitor *PART 2* with this command:"
-echo "     tail -f /tmp/PortageHomepagesLogs.txt"
+echo "        tail -f /tmp/PortageHomepagesLogs.txt"
+echo 
+echo 
 
 /usr/bin/time -f %E -o /tmp/PTHC-Processing-Results-2.txt cat /tmp/PortageHomepagesWithIssues.txt | xargs -n1 -P 3 -i wget --no-check-certificate --timeout=10 --tries=3 --waitretry=10 --no-check-certificate --no-cookies -nv -a /tmp/PortageHomepagesLogs.txt -O /dev/null {}
 echo "     Amount of time *PART 2* of this step took: `cat /tmp/PTHC-Processing-Results-2.txt`"
@@ -156,8 +159,9 @@ echo "     Amount of time *PART 2* of this step took: `cat /tmp/PTHC-Processing-
 #    then remove lines that have '%' which must (?) be a carryover from the ebuild
 #    then remove the colons at the end, which wget adds in.
 
-
+echo
 echo "     Finishing up this step..."
+echo
 
 grep '403: Forbidden' /tmp/PortageHomepagesLogs.txt -B 2 | grep -v '403: Forbidden' | grep -E '^http' | grep -v '%' | sed s/:$//g > /tmp/PTHC-403.txt
 
@@ -178,24 +182,23 @@ grep 'unable to resolve host address' /tmp/PortageHomepagesLogs.txt -B 2 | grep 
 # Display the useful information.
 
 echo
+echo
 echo "4) Producing Results..."
 echo
-echo
-
 
 
 # REPORT EBUILDS WITH DNS ISSUES
 echo
-echo
-echo
-echo "     There are `wc -l /tmp/PTHC-DNS.txt | awk '{print $1}'` HOMEPAGES that have DNS issues."
+echo "  --> There are `wc -l /tmp/PTHC-DNS.txt | awk '{print $1}'` HOMEPAGES that have *DNS* issues."
 echo ""
-echo ""
-echo "     They are being recorded in /tmp/PTHC-DNS-Results.txt..."
+echo "     The URL's, and the ebuilds that contain them, are being recorded in"
+echo "       /tmp/PTHC-DNS-Results.txt..."
 echo 
 rm -f /tmp/PTHC-DNS-Results.txt > /dev/null
 
-echo "Need to fix: currently, all ebuilds that reference this URL will be included, whether or not it is the HOMEPAGE variable or the SRC_URI variable.)" >> /tmp/PTHC-DNS-Results.txt 
+echo "     There are `wc -l /tmp/PTHC-DNS.txt | awk '{print $1}'` HOMEPAGES that have *DNS* issues." >> /tmp/PTHC-DNS-Results.txt
+echo >> /tmp/PTHC-DNS-Results.txt
+echo "Need to fix: currently, all ebuilds that reference this URL will be included, whether or not it is the HOMEPAGE variable or the SRC_URI variable. No distinction is made in the output below, even though it says \"HOMEPAGE with a problem\"" >> /tmp/PTHC-DNS-Results.txt 
 echo "" >> /tmp/PTHC-DNS-Results.txt
 
 for i in $(cat /tmp/PTHC-DNS.txt) ; do
@@ -212,32 +215,145 @@ done
 
 
 # REPORT EBUILDS WITH 403 ISSUES
+
 echo
 echo
+echo "  --> There are `wc -l /tmp/PTHC-403.txt | awk '{print $1}'` HOMEPAGES that have *403 Forbidden* issues."
+echo ""
+echo "     The URL's, and the ebuilds that contain them, are being recorded in"
+echo "       /tmp/PTHC-403-Results.txt..."
+echo 
+rm -f /tmp/PTHC-403-Results.txt > /dev/null
+
+echo "     There are `wc -l /tmp/PTHC-403.txt | awk '{print $1}'` HOMEPAGES that have *403 Forbidden* issues." >> /tmp/PTHC-403-Results.txt
+echo >> /tmp/PTHC-403-Results.txt
+echo "Need to fix: currently, all ebuilds that reference this URL will be included, whether or not it is the HOMEPAGE variable or the SRC_URI variable. No distinction is made in the output below, even though it says HOMEPAGE with a problem" >> /tmp/PTHC-403-Results.txt 
+echo "" >> /tmp/PTHC-403-Results.txt
+
+for i in $(cat /tmp/PTHC-403.txt) ; do
+echo "" >> /tmp/PTHC-403-Results.txt
+echo "HOMEPAGE with a problem...    $i" >> /tmp/PTHC-403-Results.txt
+echo "   ...Searching Portage tree for all ebuilds that use this HOMEPAGE." >> /tmp/PTHC-403-Results.txt
+echo "" >> /tmp/PTHC-403-Results.txt
+find /usr/portage/ -name '*.ebuild' -type f -print | xargs -i grep -l $i {} >> /tmp/PTHC-403-Results.txt
+echo "" >> /tmp/PTHC-403-Results.txt
+echo "" >> /tmp/PTHC-403-Results.txt
+done
 
 
 
 # REPORT EBUILDS WITH 404 ISSUES
 echo
 echo
+echo
+echo "  --> There are `wc -l /tmp/PTHC-404.txt | awk '{print $1}'` HOMEPAGES that have *404 Not Found* issues."
+echo ""
+echo ""
+echo "     The URL's, and the ebuilds that contain them, are being recorded in"
+echo "       /tmp/PTHC-404-Results.txt..."
+echo 
+rm -f /tmp/PTHC-404-Results.txt > /dev/null
+
+echo "     There are `wc -l /tmp/PTHC-404.txt | awk '{print $1}'` HOMEPAGES that have *404 Not Found* issues." >> /tmp/PTHC-404-Results.txt
+echo >> /tmp/PTHC-404-Results.txt
+echo "Need to fix: currently, all ebuilds that reference this URL will be included, whether or not it is the HOMEPAGE variable or the SRC_URI variable. No distinction is made in the output below, even though it says HOMEPAGE with a problem" >> /tmp/PTHC-404-Results.txt 
+echo "" >> /tmp/PTHC-404-Results.txt
+
+for i in $(cat /tmp/PTHC-404.txt) ; do
+echo "" >> /tmp/PTHC-404-Results.txt
+echo "HOMEPAGE with a problem...    $i" >> /tmp/PTHC-404-Results.txt
+echo "   ...Searching Portage tree for all ebuilds that use this HOMEPAGE." >> /tmp/PTHC-404-Results.txt
+echo "" >> /tmp/PTHC-404-Results.txt
+find /usr/portage/ -name '*.ebuild' -type f -print | xargs -i grep -l $i {} >> /tmp/PTHC-404-Results.txt
+echo "" >> /tmp/PTHC-404-Results.txt
+echo "" >> /tmp/PTHC-404-Results.txt
+done
 
 
 
 # REPORT EBUILDS WITH 500 ISSUES
 echo
 echo
+echo
+echo "  --> There are `wc -l /tmp/PTHC-500.txt | awk '{print $1}'` HOMEPAGES that have *500 Internal Server Error* issues."
+echo ""
+echo ""
+echo "     The URL's, and the ebuilds that contain them, are being recorded in"
+echo "       /tmp/PTHC-500-Results.txt..."
+echo 
+rm -f /tmp/PTHC-500-Results.txt > /dev/null
+
+echo "     There are `wc -l /tmp/PTHC-500.txt | awk '{print $1}'` HOMEPAGES that have *500 Internal Server Error* issues." >> /tmp/PTHC-404-Results.txt
+echo >> /tmp/PTHC-500-Results.txt
+echo "Need to fix: currently, all ebuilds that reference this URL will be included, whether or not it is the HOMEPAGE variable or the SRC_URI variable. No distinction is made in the output below, even though it says HOMEPAGE with a problem" >> /tmp/PTHC-500-Results.txt 
+echo "" >> /tmp/PTHC-500-Results.txt
+
+for i in $(cat /tmp/PTHC-500.txt) ; do
+echo "" >> /tmp/PTHC-500-Results.txt
+echo "HOMEPAGE with a problem...    $i" >> /tmp/PTHC-500-Results.txt
+echo "   ...Searching Portage tree for all ebuilds that use this HOMEPAGE." >> /tmp/PTHC-500-Results.txt
+echo "" >> /tmp/PTHC-500-Results.txt
+find /usr/portage/ -name '*.ebuild' -type f -print | xargs -i grep -l $i {} >> /tmp/PTHC-500-Results.txt
+echo "" >> /tmp/PTHC-500-Results.txt
+echo "" >> /tmp/PTHC-500-Results.txt
+done
 
 
 
 # REPORT EBUILDS WITH 503 ISSUES
 echo
 echo
+echo
+echo "  --> There are `wc -l /tmp/PTHC-503.txt | awk '{print $1}'` HOMEPAGES that have *503 Service Unavailable* issues."
+echo ""
+echo ""
+echo "     The URL's, and the ebuilds that contain them, are being recorded in"
+echo "       /tmp/PTHC-503-Results.txt..."
+echo 
+rm -f /tmp/PTHC-503-Results.txt > /dev/null
+
+echo "     There are `wc -l /tmp/PTHC-503.txt | awk '{print $1}'` HOMEPAGES that have *503 Service Unavailable* issues." >> /tmp/PTHC-503-Results.txt
+echo >> /tmp/PTHC-503-Results.txt
+echo "Need to fix: currently, all ebuilds that reference this URL will be included, whether or not it is the HOMEPAGE variable or the SRC_URI variable. No distinction is made in the output below, even though it says HOMEPAGE with a problem" >> /tmp/PTHC-503-Results.txt 
+echo "" >> /tmp/PTHC-503-Results.txt
+
+for i in $(cat /tmp/PTHC-503.txt) ; do
+echo "" >> /tmp/PTHC-503-Results.txt
+echo "HOMEPAGE with a problem...    $i" >> /tmp/PTHC-503-Results.txt
+echo "   ...Searching Portage tree for all ebuilds that use this HOMEPAGE." >> /tmp/PTHC-503-Results.txt
+echo "" >> /tmp/PTHC-503-Results.txt
+find /usr/portage/ -name '*.ebuild' -type f -print | xargs -i grep -l $i {} >> /tmp/PTHC-503-Results.txt
+echo "" >> /tmp/PTHC-503-Results.txt
+echo "" >> /tmp/PTHC-503-Results.txt
+done
 
 
 
 # REPORT EBUILDS WITH 410 ISSUES
 echo
 echo
+echo "  --> There are `wc -l /tmp/PTHC-410.txt | awk '{print $1}'` HOMEPAGES that have *410 Gone* issues."
+echo ""
+echo ""
+echo "     The URL's, and the ebuilds that contain them, are being recorded in"
+echo "       /tmp/PTHC-410-Results.txt..."
+echo 
+rm -f /tmp/PTHC-410-Results.txt > /dev/null
+
+echo "     There are `wc -l /tmp/PTHC-410.txt | awk '{print $1}'` HOMEPAGES that have *410 Gone* issues." >> /tmp/PTHC-410-Results.txt
+echo >> /tmp/PTHC-410-Results.txt
+echo "Need to fix: currently, all ebuilds that reference this URL will be included, whether or not it is the HOMEPAGE variable or the SRC_URI variable. No distinction is made in the output below, even though it says HOMEPAGE with a problem" >> /tmp/PTHC-410-Results.txt 
+echo "" >> /tmp/PTHC-410-Results.txt
+
+for i in $(cat /tmp/PTHC-410.txt) ; do
+echo "" >> /tmp/PTHC-410-Results.txt
+echo "HOMEPAGE with a problem...    $i" >> /tmp/PTHC-410-Results.txt
+echo "   ...Searching Portage tree for all ebuilds that use this HOMEPAGE." >> /tmp/PTHC-410-Results.txt
+echo "" >> /tmp/PTHC-410-Results.txt
+find /usr/portage/ -name '*.ebuild' -type f -print | xargs -i grep -l $i {} >> /tmp/PTHC-410-Results.txt
+echo "" >> /tmp/PTHC-410-Results.txt
+echo "" >> /tmp/PTHC-410-Results.txt
+done
 
 
 
@@ -252,9 +368,11 @@ echo
 echo
 echo 
 echo "5) Follow-up..."
+echo
 echo "     Now you can file bug reports: http://bugs.gentoo.org/enter_bug.cgi?product=Gentoo%20Linux&format=guided"
 echo 
 echo "		(first, double-check that someone hasn't filed a bug already)"
+echo
 echo
 echo "     Select \"Applications\" and enter a Description like \"Invalid HOMEPAGE for [package name]\"."
 echo
