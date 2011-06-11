@@ -1,3 +1,5 @@
 TODO
 
 Be able to differentiate the bad URL's: either HOMEPAGE or SRC_URI
+
+Sometime the search to find which ebuilds (that the URL is in) fails to find any.
