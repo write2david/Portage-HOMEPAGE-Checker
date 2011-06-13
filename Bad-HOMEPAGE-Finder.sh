@@ -97,18 +97,6 @@ echo
 #	and get the HTTP codes all the HOMEPAGES that have issues.
 
 
-#=========
-#===OLD===
-# wget -i /tmp/PortageHomepagesWithIssues.txt -o /tmp/PortageHomepagesLogs.txt -O /tmp/PortageHomepageDump
-# The command above takes forever, run 3 instances of wget in parallel, idea taken from http://www.linuxjournal.com/content/downloading-entire-web-site-wget#comment-325493
-# here we also change wget command from -o to -a, so that each wget doesn't overwrite the file, but instead appends to it
-# NOTE:  you can increase speed by adding more instances of wget (change "-P 3" to something like "-P 15")
-#     but I don't think my DNS server likes that many lookups so quickly, after a while it stops resolving
-#     So, if you want to increase parallelization further, it might be best to run your own DNS server like unbound
-# ========
-# ========
-
-
 
 rm -f /tmp/PortageHomepagesLogs.txt > /dev/null
 
@@ -126,30 +114,6 @@ echo
 
 /usr/bin/time -f %E -o /tmp/PTHC-Processing-Results-2.txt cat /tmp/PortageHomepagesWithIssues.txt | xargs -n1 -P 3 -i wget --no-check-certificate --timeout=10 --tries=3 --waitretry=10 --no-check-certificate --no-cookies -nv -a /tmp/PortageHomepagesLogs.txt -O /dev/null {}
 echo "     Amount of time *PART 2* of this step took: `cat /tmp/PTHC-Processing-Results-2.txt`"
-
-
-
-#=========
-#===OLD===
-# Filter out the URL's that have 302 redirects, which are okay.
-# The 302 status codes will be listed by wget in the file as "302 MovedTemporarily" (no space) and "302 Found"
-#
-# This is not needed anymore, with the switch to "-nv" in the previous wget command
-# grep -E '302 MovedTemporarily|302 Found' /tmp/PortageHomepagesLogs.txt -B 3 | head -n1 | awk '{ print $3}' > /tmp/PortageHomepagesWith302.txt
-
-# Combine both the list of problematic homepages with the list of 302 homepages, and then remove all the duplicate lines so that only the unique lines (the non-302 errors) remain
-# cat /tmp/PortageHomepagesWith302.txt >> /tmp/PortageHomepagesWithIssues.txt
-
-
-# STEP 2.5 -OLD
-# GO through the results of the previous command and get all the DNS resolution errors (which is something the next step doesn't catch)
-# grep 'unable to resolve host address' /tmp/PortageHomepagesTested.txt > /tmp/RealPortageHomepageIssues-DNS-ISSUES.txt
-# pull only the URL (the 7th field), then get only the characters a-z, A-Z, 0-9, and period (that is, remove the quotes)
-# cat /tmp/PortageHomepageIssues-DNS-ISSUES.txt | awk '{ print $7}' | sed s/[^a-zA-Z0-9.]//g > /tmp/RealPortageHomepageIssues-DNS-ISSUES.txt 
-# sort /tmp/PortageHomepagesWithIssues.txt | uniq -u > /tmp/RealPortageHomepageIssues.txt
-# ========
-# ========
-
 
 
 
@@ -371,7 +335,8 @@ echo "5) Follow-up..."
 echo
 echo "     Now you can file bug reports: http://bugs.gentoo.org/enter_bug.cgi?product=Gentoo%20Linux&format=guided"
 echo 
-echo "		(first, double-check that someone hasn't filed a bug already)"
+echo "		(first, double-check that someone hasn't filed a bug already"
+echo "       AND double-check that a newer version of the ebuild hasn't fixed the broken HOMEPAGE already)"
 echo
 echo
 echo "     Select \"Applications\" and enter a Description like \"Invalid HOMEPAGE for [package name]\"."
