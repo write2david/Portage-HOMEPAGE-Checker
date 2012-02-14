@@ -127,7 +127,7 @@ rm -f /tmp/PortageHomepagesLogs.txt > /dev/null
 echo "   *PART 1* in progress: removing the valid HOMEPAGES from the list..."
 
 /usr/bin/time -f %E -o /tmp/PTHC-Processing-Results-1.txt grep -v '200 OK' /tmp/PortageHomepagesTested.txt | grep -v '200 Ok' | grep http | sed 's/:$//g' > /tmp/PortageHomepagesWithIssues.txt
-echo "     Amount of time *PART 1* of this step took: `cat /tmp/PTHC-Processing-Results-1.txt | sed 's/\...//g'`"
+echo "     Amount of time *PART 1* of this step took: `cat /tmp/PTHC-Processing-Results-1.txt`"
 echo
 echo
 echo "   *PART 2* in progress: identifying what problems the remaining HOMEPAGES's have..."
@@ -138,7 +138,7 @@ echo
 echo 
 
 /usr/bin/time -f %E -o /tmp/PTHC-Processing-Results-2.txt cat /tmp/PortageHomepagesWithIssues.txt | xargs -n1 -P 3 -i wget --timeout=10 --tries=3 --waitretry=10 --no-check-certificate --no-cookies -nv -a /tmp/PortageHomepagesLogs.txt -O /dev/null {}
-echo "     Amount of time *PART 2* of this step took: `cat /tmp/PTHC-Processing-Results-2.txt | sed 's/\...//g'`"
+echo "     Amount of time *PART 2* of this step took: `cat /tmp/PTHC-Processing-Results-2.txt`"
 
 
 

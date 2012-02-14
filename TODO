@@ -1,5 +1,7 @@
 TODO
 
-Be able to differentiate the bad URL's: either HOMEPAGE or SRC_URI
+Be able to differentiate the bad URL's: either HOMEPAGE or SRC_URI.
 
-Sometime the search to find which ebuilds (that the URL is in) fails to find any.
+Sometimes, when searching to find which ebuilds that the URL is in, it fails to find any ebuilds.
+
+Rename the files in use to all have "FPHP_" at the start of the filename, and choose better filenames.
